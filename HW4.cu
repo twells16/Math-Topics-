@@ -39,8 +39,8 @@
 #include <stdio.h>
 
 // Defines
-#define N 100000000 // Length of the vector                                                     //Change the length of the vector to be a very large number to test the GPU performace under
-                                                                                                //a heavier load
+#define N 100000000 // Length of the vector                                //Change the length of the vector to be a very large number to test the GPU performace under
+                                                                           //a heavier load
 
 // Global variables
 float *A_CPU, *B_CPU, *C_CPU; //CPU pointers
@@ -118,10 +118,14 @@ void addVectorsCPU(float *a, float *b, float *c, int n)
 {
 	for(int id = 0; id < n; id++)
 	{ 
-		c[id] = sqrtf(cosf(a[id]) * cosf(a[id]) + a[id]*a[id] + sinf(a[id]) * sinf(a[id]) - 1.0f)      //Changed the a + b equation to this one to have more computation on the CPU
-                                                                                                       //the way this adds more work is its doing more work on the kernel going back
-                                                                                                       //and forth between the CPU and the GPU. This causes more time on the GPU and CPU 
-                                                                                                       //doing math. This also helps reveal the advantages of parallel programming.
+		c[id] = sqrtf(cosf(a[id]) * cosf(a[id]) + a[id]*a[id] + sinf(a[id]) * sinf(a[id]) - 1.0f)   //Changed the a + b equation to this one to have 
+																									//more computation on the CPU
+                                                                                                	//the way this adds more work is its doing more 
+																									//work on the kernel going back
+                                                                                                     //and forth between the CPU and the GPU. 
+																									//This causes more time on the GPU and CPU 
+                                                                                                    //doing math. This also helps reveal the advantages
+																									//of parallel programming.
               + sqrtf(cosf(b[id])* cosf(b[id]) + b[id]*b[id] + sinf(b[id]) * sinf(b[id]) - 1.0f);
 	}
 }
@@ -131,15 +135,15 @@ void addVectorsCPU(float *a, float *b, float *c, int n)
 __global__ void addVectorsGPU(float *a, float *b, float *c, int n)
 {
 	int id = blockIdx.x*blockDim.x + threadIdx.x;
-	#pragma unroll                                                                                      //This enables support for any vector size, and helps with performance tuning. 
-                                                                                                        //This function expands the loop so that fewer iterations and steps are taken.
-                                                                                                        //This boost the performance by elimination loop overhead and allows the GPU
-                                                                                                        //to execute more instructions when unrolled thus speeding up the GPU a little 
-                                                                                                        //and out performs the CPU.
+	#pragma unroll                                                               //This enables support for any vector size, and helps with performance tuning. 
+                                                                                 //This function expands the loop so that fewer iterations and steps are taken.
+                                                                                //This boost the performance by elimination loop overhead and allows the GPU
+                                                                                 //to execute more instructions when unrolled thus speeding up the GPU a little 
+                                                                                //and out performs the CPU.
 	for (int i = id; i < n; i += blockDim.x * gridDim.x)
     {
-        if (i < n)                                                                                      //This equation ensures that the CPU and GPU are doing the same work for the same reason
-                                                                                                        //stated above.
+        if (i < n)                                                               //This equation ensures that the CPU and GPU are doing the same work for the same reason
+                                                                                 //stated above.
         {
             c[i] = sqrtf(cosf(a[i]) * cosf(a[i]) + a[i]*a[i] + sinf(a[i]) * sinf(a[i]) - 1.0f)
                  + sqrtf(cosf(b[i]) * cosf(b[i]) + b[i]*b[i] + sinf(b[i]) * sinf(b[i]) - 1.0f);
