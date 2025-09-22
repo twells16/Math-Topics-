@@ -58,11 +58,11 @@ void cudaErrorCheck(const char *file, int line)
 // This will be the layout of the parallel space we will be using.
 void setUpDevices()
 {
-	BlockSize.x = 1000;  // FIXED: Changed back to 1000 as specified in instructions
+	BlockSize.x = 1000;
 	BlockSize.y = 1;
 	BlockSize.z = 1;
 	
-	GridSize.x = 1;      // 1 block (fixed)
+	GridSize.x = 1;
 	GridSize.y = 1;
 	GridSize.z = 1;
 }
@@ -73,14 +73,14 @@ void allocateMemory()
 	// Host "CPU" memory.				
 	A_CPU = (float*)malloc(N*sizeof(float));
 	B_CPU = (float*)malloc(N*sizeof(float));
-	C_CPU = (float*)malloc(sizeof(float)); // Only need one float to store final dot product result
+	C_CPU = (float*)malloc(sizeof(float));
 	
 	// Device "GPU" Memory
 	cudaMalloc(&A_GPU,N*sizeof(float));
 	cudaErrorCheck(__FILE__, __LINE__);
 	cudaMalloc(&B_GPU,N*sizeof(float));
 	cudaErrorCheck(__FILE__, __LINE__);
-	cudaMalloc(&C_GPU,sizeof(float));  // Only one float on device for final result
+	cudaMalloc(&C_GPU,sizeof(float));
 	cudaErrorCheck(__FILE__, __LINE__);
 }
 
@@ -109,13 +109,12 @@ float dotProductCPU_Simple(float *a, float *b, int n)
 //This function is going to compute the dot product on the GPU
 //This happens by creating a shared memory space to store partial products that will be computed in
 //this function. You then write an if, else loop to make the threads compute a partial product as 
-//long as it is in bounds. You then synce the threads to make sure they aren't leaving anyone behind
-//You then write a for loop that will perform block level reduction, which is a parallel technique that 
+//long as it is in bounds. You then sync the threads to make sure they aren't leaving anyone behind
+//You then write a while loop that will perform block level reduction, which is a parallel technique that 
 //makes all the threads within a single block work together to compute a large calculation.
 //You then write a an if loop to write the results to global memory.
 __global__ void dotProductGPU(float *a, float *b, float *C_GPU, int n)
 {
-	// FIXED: Changed shared memory size back to 1000 to match block size
 	__shared__ float partialSum[1000];
 
 	int tid = threadIdx.x;
@@ -128,15 +127,65 @@ __global__ void dotProductGPU(float *a, float *b, float *C_GPU, int n)
 
 	__syncthreads();
 
-	// FIXED: Block level reduction with proper folding
-	// Since we have 1000 threads and N=823, we need to handle the folding correctly
-	for (int stride = blockDim.x / 2; stride > 0; stride >>= 1)
+	// FIXED: Proper block level reduction
+	// Start from the nearest power of 2 less than or equal to blockDim.x
+	int stride = 1;
+	while (stride < blockDim.x) stride <<= 1;
+	stride >>= 1;  // Now stride is the largest power of 2 <= blockDim.x
+	
+	while (stride > 0)
+	{, end);
+	
+	// Copy memory from CPU to GPU, synchronous copy to avoid race conditions
+	cudaMemcpy(A_GPU, A_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
+	cudaErrorCheck(__FILE__, __LINE__);
+	cudaMemcpy(B_GPU, B_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
+	cudaErrorCheck(__FILE__, __LINE__);
+
+	// Zero out C_GPU on device before kernel launch (optional but safe)
+	cudaMemset(C_GPU, 0, sizeof(float));
+	cudaErrorCheck(__FILE__, __LINE__);
+	
+	// Launch kernel to compute dot product on GPU
+	gettimeofday(&start, NULL);
+	dotProductGPU<<<GridSize, BlockSize>>>(A_GPU, B_GPU, C_GPU, N);
+	cudaErrorCheck(__FILE__, __LINE__);
+	cudaDeviceSynchronize();
+	cudaErrorCheck(__FILE__, __LINE__);
+	
+	// Copy result back from GPU to CPU
+	cudaMemcpy(C_CPU, C_GPU, sizeof(float), cudaMemcpyDeviceToHost);
+	cudaErrorCheck(__FILE__, __LINE__);
+	DotGPU = C_CPU[0];
+	gettimeofday(&end, NULL);
+	timeGPU = elaspedTime(start, end);
+	
+	// Check if GPU result matches CPU result within tolerance
+	if(!check(DotCPU, DotGPU, Tolerance))
 	{
-		if (tid < stride)
+		printf("\n\n Something went wrong in the GPU dot product.\n");
+	}
+	else
+	{
+		printf("\n\n You did a dot product correctly on the GPU");
+		printf("\n The CPU result is: %f", DotCPU);
+		printf("\n The GPU result is: %f", DotGPU);
+		printf("\n The time it took on the CPU was %ld microseconds", timeCPU);
+		printf("\n The time it took on the GPU was %ld microseconds", timeGPU);
+	}
+	
+	// Cleanup
+	CleanUp();	
+	
+	printf("\n\n");
+	return 0; // FIXED: Added missing return statement
+}
+		if (tid < stride && tid + stride < blockDim.x)
 		{
 			partialSum[tid] += partialSum[tid + stride];
 		}
 		__syncthreads();
+		stride >>= 1;
 	}
 
 	// First thread writes result to global memory
@@ -241,7 +290,7 @@ int main()
 	CleanUp();	
 	
 	printf("\n\n");
-	return 0; // FIXED: Added missing return statement
+	return 0;
 }
 
 
