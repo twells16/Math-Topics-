@@ -105,14 +105,7 @@ float dotProductCPU_Simple(float *a, float *b, int n)
     return sum;
 }
 
-// This is the kernel. It is the function that will run on the GPU.
-//This function is going to compute the dot product on the GPU
-//This happens by creating a shared memory space to store partial products that will be computed in
-//this function. You then write an if, else loop to make the threads compute a partial product as 
-//long as it is in bounds. You then sync the threads to make sure they aren't leaving anyone behind
-//You then write a while loop that will perform block level reduction, which is a parallel technique that 
-//makes all the threads within a single block work together to compute a large calculation.
-//You then write a an if loop to write the results to global memory.
+// FIXED: Corrected GPU kernel with proper reduction
 __global__ void dotProductGPU(float *a, float *b, float *C_GPU, int n)
 {
 	__shared__ float partialSum[1000];
@@ -134,52 +127,7 @@ __global__ void dotProductGPU(float *a, float *b, float *C_GPU, int n)
 	stride >>= 1;  // Now stride is the largest power of 2 <= blockDim.x
 	
 	while (stride > 0)
-	{, end);
-	
-	// Copy memory from CPU to GPU, synchronous copy to avoid race conditions
-	cudaMemcpy(A_GPU, A_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
-	cudaErrorCheck(__FILE__, __LINE__);
-	cudaMemcpy(B_GPU, B_CPU, N*sizeof(float), cudaMemcpyHostToDevice);
-	cudaErrorCheck(__FILE__, __LINE__);
-
-	// Zero out C_GPU on device before kernel launch (optional but safe)
-	cudaMemset(C_GPU, 0, sizeof(float));
-	cudaErrorCheck(__FILE__, __LINE__);
-	
-	// Launch kernel to compute dot product on GPU
-	gettimeofday(&start, NULL);
-	dotProductGPU<<<GridSize, BlockSize>>>(A_GPU, B_GPU, C_GPU, N);
-	cudaErrorCheck(__FILE__, __LINE__);
-	cudaDeviceSynchronize();
-	cudaErrorCheck(__FILE__, __LINE__);
-	
-	// Copy result back from GPU to CPU
-	cudaMemcpy(C_CPU, C_GPU, sizeof(float), cudaMemcpyDeviceToHost);
-	cudaErrorCheck(__FILE__, __LINE__);
-	DotGPU = C_CPU[0];
-	gettimeofday(&end, NULL);
-	timeGPU = elaspedTime(start, end);
-	
-	// Check if GPU result matches CPU result within tolerance
-	if(!check(DotCPU, DotGPU, Tolerance))
 	{
-		printf("\n\n Something went wrong in the GPU dot product.\n");
-	}
-	else
-	{
-		printf("\n\n You did a dot product correctly on the GPU");
-		printf("\n The CPU result is: %f", DotCPU);
-		printf("\n The GPU result is: %f", DotGPU);
-		printf("\n The time it took on the CPU was %ld microseconds", timeCPU);
-		printf("\n The time it took on the GPU was %ld microseconds", timeGPU);
-	}
-	
-	// Cleanup
-	CleanUp();	
-	
-	printf("\n\n");
-	return 0; // FIXED: Added missing return statement
-}
 		if (tid < stride && tid + stride < blockDim.x)
 		{
 			partialSum[tid] += partialSum[tid + stride];
@@ -292,5 +240,3 @@ int main()
 	printf("\n\n");
 	return 0;
 }
-
-
