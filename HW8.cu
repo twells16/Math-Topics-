@@ -105,7 +105,14 @@ float dotProductCPU_Simple(float *a, float *b, int n)
     return sum;
 }
 
-// FIXED: Corrected GPU kernel with proper reduction
+// This is the kernel. It is the function that will run on the GPU.
+//This function is going to compute the dot product on the GPU
+//This happens by creating a shared memory space to store partial products that will be computed in
+//this function. You then write an if, else loop to make the threads compute a partial product as 
+//long as it is in bounds. You then synce the threads to make sure they aren't leaving anyone behind
+//You then write a for loop that will perform block level reduction, which is a parallel technique that 
+//makes all the threads within a single block work together to compute a large calculation.
+//You then write a an if loop to write the results to global memory.
 __global__ void dotProductGPU(float *a, float *b, float *C_GPU, int n)
 {
 	__shared__ float partialSum[1000];
