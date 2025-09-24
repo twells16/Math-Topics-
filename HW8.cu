@@ -115,17 +115,17 @@ float dotProductCPU_Simple(float *a, float *b, int n)
 //You then write a an if loop to write the results to global memory.
 __global__ void dotProductGPU(float *a, float *b, float *C_GPU, int n)
 {
-	__shared__ float partialSum[1000];
+	__shared__ float partialSum[1000]; //added a shared memory space to store partial products.
 
 	int tid = threadIdx.x;
 
 	// Each thread computes product or 0 if out of range
-	if(tid < n)
+	if(tid < n)										//I then added an if else statement to compute the partial products and to check if they were in the bounds 
 		partialSum[tid] = a[tid] * b[tid];
 	else
 		partialSum[tid] = 0.0f;
 
-	__syncthreads();
+	__syncthreads();								//I then synced the threads to make sure they weren't moving on without the previous step.
 
 	// FIXED: Proper block level reduction
 	// Start from the nearest power of 2 less than or equal to blockDim.x
@@ -133,13 +133,13 @@ __global__ void dotProductGPU(float *a, float *b, float *C_GPU, int n)
 	while (stride < blockDim.x) stride <<= 1;
 	stride >>= 1;  // Now stride is the largest power of 2 <= blockDim.x
 	
-	while (stride > 0)
+	while (stride > 0)									//added a stride to compute block reduction for the dot product 
 	{
 		if (tid < stride && tid + stride < blockDim.x)
 		{
 			partialSum[tid] += partialSum[tid + stride];
 		}
-		__syncthreads();
+		__syncthreads();								//synced threads after the stride to make sure everything is moving in order
 		stride >>= 1;
 	}
 
