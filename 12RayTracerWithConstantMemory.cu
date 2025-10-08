@@ -131,7 +131,7 @@ __global__ void makeSphersBitMap(float *pixels) 							//took out the second par
 		if(maxHit < hitValue)
 		{
 			// Setting the RGB value of the sphere but also diming it as it gets close to the side of the sphere.
-			pixelr = s[i].r * dimingValue; 	
+			pixelr = s[i].r * dimingValue; 									//had to change sphereInfo to s so that it would math teh parameter for hitValue 
 			pixelg = s[i].g * dimingValue;	
 			pixelb = s[i].b * dimingValue; 	
 			maxHit = hitValue; // reset maxHit value to be the current closest sphere
