@@ -29,6 +29,9 @@
 #define NUMSPHERES 100
 #define MAXRADIUS 0.2  // The window is a 2 by 2 square.
 
+__constant__ Sphere s[NUMSHPERES}; 							//This allows us to not have to worry about calling cudaMaalloc() or 
+															//cudaFree() for the areay of spheres since we are declaring it constant
+
 // Local structures
 struct sphereStruct 
 {
@@ -158,7 +161,7 @@ void makeRandomSpheres()
 
 void makeBitMap()
 {	
-	cudaMemcpy(SpheresGPU, SpheresCPU, NUMSPHERES*sizeof(sphereStruct), cudaMemcpyHostToDevice);
+	cudaMemcpyToSymbol(SpheresGPU, SpheresCPU, NUMSPHERES*sizeof(sphereStruct), cudaMemcpyHostToDevice);
 	cudaErrorCheck(__FILE__, __LINE__);
 	
 	makeSphersBitMap<<<GridSize, BlockSize>>>(PixelsGPU, SpheresGPU);
@@ -185,7 +188,7 @@ void setup()
 	cudaErrorCheck(__FILE__, __LINE__);
 	
 	SpheresCPU= (sphereStruct*)malloc(NUMSPHERES*sizeof(sphereStruct));
-	cudaMalloc(&SpheresGPU, NUMSPHERES*sizeof(sphereStruct));
+	//cudaMalloc(&SpheresGPU, NUMSPHERES*sizeof(sphereStruct));        commented this ut because we are using the number of spheres in constant memory
 	cudaErrorCheck(__FILE__, __LINE__);
 	
 	//Threads in a block
