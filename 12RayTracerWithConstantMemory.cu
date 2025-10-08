@@ -29,8 +29,6 @@
 #define NUMSPHERES 100
 #define MAXRADIUS 0.2  // The window is a 2 by 2 square.
 
-__constant__ Sphere s[NUMSHPERES}; 							//This allows us to not have to worry about calling cudaMaalloc() or 
-															//cudaFree() for the areay of spheres since we are declaring it constant
 
 // Local structures
 struct sphereStruct 
@@ -39,6 +37,9 @@ struct sphereStruct
 	float radius;
 	float x,y,z; // Sphere center
 };
+
+__constant__ sphereStruct s[NUMSPHERES];				//This allows us to not have to worry about calling cudaMalloc() or 
+														//cudaFree() for the array of spheres since we are declaring it constant
 
 // Globals variables
 static int Window;
@@ -103,7 +104,7 @@ __device__ float hit(float pixelx, float pixely, float *dimingValue, sphereStruc
 	return (ZMIN- 1.0); //If the ray doesn't hit anything return a number behind the box.
 }
 
-__global__ void makeSphersBitMap(float *pixels, sphereStruct *sphereInfo)
+__global__ void makeSphersBitMap(float *pixels) 							//took out the second parameter since we are switching to constant memory 
 {
 	float stepSizeX = (XMAX - XMIN)/((float)WINDOWWIDTH - 1);
 	float stepSizeY = (YMAX - YMIN)/((float)WINDOWHEIGHT - 1);
@@ -124,14 +125,15 @@ __global__ void makeSphersBitMap(float *pixels, sphereStruct *sphereInfo)
 	float maxHit = ZMIN -1.0f; // Initializing it to be out of the back of the box.
 	for(int i = 0; i < NUMSPHERES; i++)
 	{
-		hitValue = hit(pixelx, pixely, &dimingValue, sphereInfo[i]);
+		hitValue = hit(pixelx, pixely, &dimingValue, s[i]);					//switched sphereInfo to s since thats what I'm calling through the constant memory
+																			//also is what the textbook uses when talking constant memory so helped me follow along
 		// do we hit any spheres? If so, how close are we to the center? (i.e. n)
 		if(maxHit < hitValue)
 		{
 			// Setting the RGB value of the sphere but also diming it as it gets close to the side of the sphere.
-			pixelr = sphereInfo[i].r * dimingValue; 	
-			pixelg = sphereInfo[i].g * dimingValue;	
-			pixelb = sphereInfo[i].b * dimingValue; 	
+			pixelr = s[i].r * dimingValue; 	
+			pixelg = s[i].g * dimingValue;	
+			pixelb = s[i].b * dimingValue; 	
 			maxHit = hitValue; // reset maxHit value to be the current closest sphere
 		}
 	}
@@ -161,10 +163,11 @@ void makeRandomSpheres()
 
 void makeBitMap()
 {	
-	cudaMemcpyToSymbol(SpheresGPU, SpheresCPU, NUMSPHERES*sizeof(sphereStruct), cudaMemcpyHostToDevice);
+	cudaMemcpyToSymbol(s, SpheresCPU, NUMSPHERES*sizeof(sphereStruct));				//You change to cudaMemcpyToSymbol as this allows us to copy to constant memory
+																					//over global memory which is what cudaMemcpyHostToDevice does 
 	cudaErrorCheck(__FILE__, __LINE__);
 	
-	makeSphersBitMap<<<GridSize, BlockSize>>>(PixelsGPU, SpheresGPU);
+	makeSphersBitMap<<<GridSize, BlockSize>>>(PixelsGPU);							//Updated the parameters to match the global makeSphereBitMap parameters
 	cudaErrorCheck(__FILE__, __LINE__);
 	
 	cudaMemcpyAsync(PixelsCPU, PixelsGPU, WINDOWWIDTH*WINDOWHEIGHT*3*sizeof(float), cudaMemcpyDeviceToHost);
@@ -188,7 +191,7 @@ void setup()
 	cudaErrorCheck(__FILE__, __LINE__);
 	
 	SpheresCPU= (sphereStruct*)malloc(NUMSPHERES*sizeof(sphereStruct));
-	//cudaMalloc(&SpheresGPU, NUMSPHERES*sizeof(sphereStruct));        commented this ut because we are using the number of spheres in constant memory
+	//cudaMalloc(&SpheresGPU, NUMSPHERES*sizeof(sphereStruct));        				commented this out because we are using the number of spheres in constant memory
 	cudaErrorCheck(__FILE__, __LINE__);
 	
 	//Threads in a block
