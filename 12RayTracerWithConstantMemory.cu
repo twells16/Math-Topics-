@@ -1,4 +1,4 @@
-// Name:
+// Name:Tanner Wells
 // Ray tracing
 // nvcc 12RayTracerWithConstantMemory.cu -o temp -lglut -lGL -lm
 /*
