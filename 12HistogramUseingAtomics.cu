@@ -54,9 +54,9 @@ void fillHistogramCPU();
 
 __global__ void fillHistogramGPU(unsigned char *buffer, long size, unsigned int *histo)					//setting up the parameters that we are going to pass through fillHistogram GPU
 {
-	__shared__ unsigned int temp[256];																	//we allocate and zeroing a shared memory buffer that is going to hold teh block's 
-																										//histogram
-	temp[threadIdx.x] = 0;																				//switch from global memory buffer to the shared memory one 
+	__shared__ unsigned int temp[NUMBER_OF_BINS];																	//we allocate and zeroing a shared memory buffer that is going to hold teh block's 
+	if (threadIdx.x < NUMBER_OF_BINS) temp[threadIdx.x] = 0;														//histogram																			
+																										//switch from global memory buffer to the shared memory one 
 	__syncthreads();
 	
 	
@@ -97,12 +97,12 @@ void SetUpCudaDevices()
 	cudaGetDeviceProperties(&prop, 0);
 	cudaErrorCheck(__FILE__, __LINE__);
 	
-	float numMPs = prop.multiProcessorCount;
+	int numMPs = prop.multiProcessorCount;
 
-	BlockSize.x = 2 * prop.multiProcessorCount;
-	if(prop.maxThreadsPerBlock[0] < BlockSize.x)
+	BlockSize.x = 2 * numMPs;
+	if(BlockSize.x > prop.maxThreadsPerBlock)
 	{
-		printf("\n You are trying to create more threads (%d) than your GPU can support on a block (%d).\n Good Bye\n", BlockSize.x, prop.maxThreadsPerBlock[0]);
+		printf("\n You are trying to create more threads (%d) than your GPU can support on a block (%d).\n Good Bye\n", BlockSize.x, prop.maxThreadsPerBlock);
 		exit(0);
 	}
 	BlockSize.y = 1;
@@ -228,7 +228,7 @@ int main()
 	//Copy Memory from CPU to GPU		
 	cudaMemcpyAsync(RandomNumbersGPU, RandomNumbersCPU, NUMBER_OF_RANDOM_NUMBERS*sizeof(float), cudaMemcpyHostToDevice);
 	cudaErrorCheck(__FILE__, __LINE__);
-	fillHistogramGPU<<<GridSize,BlockSize>>>(RandomNumbersGPU, HistogramGPU);
+	fillHistogramGPU<<<GridSize,BlockSize>>>(RandomNumbersGPU, NUMBER_OF_RANDOM_NUMBERS, (unsigned int*)HistogramGPU);
 	cudaErrorCheck(__FILE__, __LINE__);
 	//Copy Memory from GPU to CPU	
 	cudaMemcpyAsync(HistogramCPUTemp, HistogramGPU, NUMBER_OF_BINS*sizeof(int), cudaMemcpyDeviceToHost);
