@@ -1,4 +1,4 @@
-// Name:
+// Name:Tanner Wells 
 // Histogram useing atomics in global memory and shared memory.
 // nvcc 12HistogramUseingAtomics.cu -o temp
 
@@ -51,8 +51,30 @@ void AllocateMemory();
 void Innitialize();
 void CleanUp();
 void fillHistogramCPU();
-__global__ void fillHistogramGPU(float *, int *);
-int main();
+
+__global__ void fillHistogramGPU(unsigned char *buffer, long size, unsigned int *histo)					//setting up the parameters that we are going to pass through fillHistogram GPU
+{
+	__shared__ unsigned int temp[256];																	//we allocate and zeroing a shared memory buffer that is going to hold teh block's 
+																										//histogram
+	temp[threadIdx.x] = 0;																				//switch from global memory buffer to the shared memory one 
+	__syncthreads();
+	
+	
+	int i = threadIdx.x + blockIdx.x * blockDim.x;														//The thread will wake up and figure out what offset of i it is and then 
+																										//determines the stride it should use
+																										//this code then walks through the array
+	int offset = blockDim.x * gridDim.x;
+
+	while(i < size)																						//then add a while loop that will complete the atomic adds 
+	{
+		atomicAdd( &(histo[buffer[i]]),1);
+		i += offset;
+	}
+	__syncthreads();
+
+	atomicAdd( &(histo[threadIdx.x]), temp[threadIdx.x]);												//this merges the blocks histogram onto the global memory at the end 
+}
+
 
 // This check to see if an error happened in your CUDA code. It tell you what it thinks went wrong,
 // and what file and line it occured on.
@@ -75,10 +97,12 @@ void SetUpCudaDevices()
 	cudaGetDeviceProperties(&prop, 0);
 	cudaErrorCheck(__FILE__, __LINE__);
 	
-	BlockSize.x = 222;
-	if(prop.maxThreadsDim[0] < BlockSize.x)
+	float numMPs = prop.multiProcessorCount;
+
+	BlockSize.x = 2 * prop.multiProcessorCount;
+	if(prop.maxThreadsPerBlock[0] < BlockSize.x)
 	{
-		printf("\n You are trying to create more threads (%d) than your GPU can support on a block (%d).\n Good Bye\n", BlockSize.x, prop.maxThreadsDim[0]);
+		printf("\n You are trying to create more threads (%d) than your GPU can support on a block (%d).\n Good Bye\n", BlockSize.x, prop.maxThreadsPerBlock[0]);
 		exit(0);
 	}
 	BlockSize.y = 1;
@@ -171,11 +195,6 @@ void fillHistogramCPU()
 	}
 }
 
-//This is the kernel. It is the function that will run on the GPU.
-__global__ void fillHistogramGPU(float *randomNumbers, int *hist)
-{
-	
-}
 
 int main()
 {
