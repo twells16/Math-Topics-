@@ -1,4 +1,4 @@
-// Name: 
+// Name:Tanner Wells
 // Setting up a stream
 // nvcc 14Streams.cu -o temp
 
@@ -176,10 +176,23 @@ int main()
 	
 	cudaEventRecord(StartEvent, 0);
 	cudaErrorCheck(__FILE__, __LINE__);
-	
+	/*This code performs what the book calls"chunking" where it takes chunkified peices of information 
+	because the GPU has much less memory than the host so the computation is staged into chunks because it cant fit all at once.
+	This function will take some fraction of the input buffer, copy it it to the GPU, execute th kernel, and copy the resulting fraction of the output buffer bcak to host
+	*/
 	for(int i = 0; i < ENTIRE_DATA_SET; i += DATA_CHUNKS)
 	{
-		???
+		cudaMemcpyAsync(A_GPU, &A_CPU[i], DATA_CHUNKS * sizeof(float), cudaMemcpyHostToDevice, Stream0);
+    	cudaErrorCheck(__FILE__, __LINE__);
+
+    	cudaMemcpyAsync(B_GPU, &B_CPU[i], DATA_CHUNKS * sizeof(float), cudaMemcpyHostToDevice, Stream0);
+    	cudaErrorCheck(__FILE__, __LINE__);
+
+    	trigAdditionGPU<<<GridSize, BlockSize, 0, Stream0>>>(A_GPU, B_GPU, C_GPU, DATA_CHUNKS);
+    	cudaErrorCheck(__FILE__, __LINE__);
+
+    	cudaMemcpyAsync(&C_CPU[i], C_GPU, DATA_CHUNKS * sizeof(float), cudaMemcpyDeviceToHost, Stream0);
+   		cudaErrorCheck(__FILE__, __LINE__);
 	}
 	
 	// ??? Notice that we have to make the CPU wait until the GPU has finished stream0
