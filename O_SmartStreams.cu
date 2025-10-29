@@ -1,4 +1,4 @@
-// Name:
+// Name:Tanner Wells 
 // Two streams overlapped smartly 
 // nvcc 15SmartStreams.cu -o temp
 /*
