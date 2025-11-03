@@ -1,4 +1,4 @@
-// Name:
+// Name: Tanner Wells 
 // GPU random walk. 
 // nvcc 16GPURandomWalk.cu -o temp
 
@@ -40,8 +40,13 @@
 // Include files
 #include <sys/time.h>
 #include <stdio.h>
+#include <curand_kernel.h>//This include file allows for randome numbers to be generated directly within the a CUDA file 
+//#include <cuda_runtime.h> //Allows us to use functions for cuda memory and kernel execution 
+#include <time.h>//This allows us to take the current time of day when we make our seed 
 
 // Defines
+#define NUM_WALKS 20
+#define NUM_STEPS 10000
 
 // Globals
 int NumberOfRandomSteps = 10000;
@@ -50,6 +55,35 @@ float MidPoint = (float)RAND_MAX/2.0f;
 // Function prototypes
 int getRandomDirection();
 int main(int, char**);
+
+/*GPU Kernel that will run our drunk walk. 
+This passes in our variables for our X, and Y positions as well as uses our seed
+*/
+__global__ void randomWalk(int *positionsX, int *positionsY, unsigned long long seed)
+{
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	if (tid>= NUM_WALKS) return;
+
+	curandState state;
+	curand_init(seed + tid, 0, 0, &state);
+
+	int posX = 0;
+	int posY = 0;
+
+	for (int i = 0; i < NUM_STEPS; i++)
+	{
+		float randX = curand_uniform(&state);
+		float randY = curand_uniform(&state);
+
+		posX += (randX < 0.5f)? -1 : 1;
+		posY += (randY < 0.5f)? -1 : 1; 
+	}
+
+	positionsX[tid] = posX;
+	positionsY[tid] = posY;
+
+}
+
 
 int getRandomDirection()
 {	
@@ -61,10 +95,25 @@ int getRandomDirection()
 
 int main(int argc, char** argv)
 {
-	srand(time(NULL));
+	int *positionsX, *positionsY;
+
+	//
+	cudaMallocManaged(&positionsX, NUM_WALKS * sizeof(int));
+	cudaMallocManaged(&positionsY, NUM_WALKS * sizeof(int));
+	//
+	int threadsPerBlock = 20;
+	int blocks = (NUM_WALKS + threadsPerBlock - 1) / threadsPerBlock;
+	unsigned long long seed = time(NULL);
+	//
+	randomWalk<<<blocks, threadsPerBlock>>>(positionsX, positionsY, seed);
+	//
+	cudaDeviceSynchronize();
+	/**/
+	//srand(time(NULL));
 	
-	printf(" RAND_MAX for this implementation is = %d \n", RAND_MAX);
-	
+	printf("RAND_MAX for this implementation is = %d \n", RAND_MAX);
+	/**/
+	/*
 	int positionX = 0;
 	int positionY = 0;
 	for(int i = 0; i < NumberOfRandomSteps; i++)
@@ -74,6 +123,18 @@ int main(int argc, char** argv)
 	}
 	
 	printf("\n Final position = (%d,%d) \n", positionX, positionY);
+	*/
+	/**/
+	printf("\nFinal Positions for %d walks : \n", NUM_WALKS);
+	for (int i = 0; i < NUM_WALKS; i++)
+	{
+		printf("Walk %2d: (%d, %d)\n", i, positionsX[i], positionsY[i]);
+	}
+
+
+	//
+	cudaFree(positionsX);
+	cudaFree(positionsY);
 	return 0;
 }
 
