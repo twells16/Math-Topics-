@@ -49,10 +49,10 @@ void setUpDevices();
 void allocateMemory();
 void innitialize();
 void addVectorsCPU(float*, float*, float*, int);
-__global__ void addVectorsGPU(float, float, float, int);//
+__global__ void addVectorsGPU(float *a, float *b, float *c, int n);//
 bool  check(float*, int);								//
 long elaspedTime(struct timeval, struct timeval);
-void cleanUp();
+void CleanUp();
 
 // This check to see if an error happened in your CUDA code. It tell you what it thinks went wrong,
 // and what file and line it occured on.
@@ -268,12 +268,11 @@ int main()
 	cudaErrorCheck(__FILE__, __LINE__);
 
 	// Launch on GPU 0
-	addVectorsGPU<<<GridSize, BlockSize>>>(A_GPU, B_GPU, C_GPU, halfN);
+	addVectorsGPU<<<Grid, BlockSize>>>(A_GPU, B_GPU, C_GPU, halfN);
 	cudaErrorCheck(__FILE__, __LINE__);
 
 	// ===== GPU 1 =====
 	cudaSetDevice(1);
-	float *A_GPU1, *B_GPU1, *C_GPU1;
 	cudaMalloc(&A_GPU1, remainder * sizeof(float));
 	cudaErrorCheck(__FILE__, __LINE__);
 	cudaMalloc(&B_GPU1, remainder * sizeof(float));
@@ -287,7 +286,7 @@ int main()
 	cudaErrorCheck(__FILE__, __LINE__);
 
 	// Launch on GPU 1
-	addVectorsGPU<<<GridSize, BlockSize>>>(A_GPU1, B_GPU1, C_GPU1, remainder);
+	addVectorsGPU<<<Grid0, BlockSize>>>(A_GPU1, B_GPU1, C_GPU1, remainder);
 	cudaErrorCheck(__FILE__, __LINE__);
 
 	// Synchronize both GPUs
