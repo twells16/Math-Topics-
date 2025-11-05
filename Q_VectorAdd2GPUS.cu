@@ -49,8 +49,8 @@ void setUpDevices();
 void allocateMemory();
 void innitialize();
 void addVectorsCPU(float*, float*, float*, int);
-__global__ void addVectorsGPU(float *a, float *b, float *c, int n);//
-bool  check(float*, int);								//
+__global__ void addVectorsGPU(float *a, float *b, float *c, int n);// defines a function to do the vector addition
+bool  check(float*, int);								//this runs a check when called that returns true or false 
 long elaspedTime(struct timeval, struct timeval);
 void CleanUp();
 
