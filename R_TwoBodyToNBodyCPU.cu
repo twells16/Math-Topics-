@@ -70,20 +70,19 @@ void set_initail_conditions()
 { 
 	time_t t;
 	srand((unsigned) time(&t));
-	//int yeahBuddy;
-	//float dx, dy, dz, seperation;
-	/**/
+	/*This runs a for loop that will take in the number of speheres that were defined 
+	and set their size, as well as ensures that any sphere that gets overlapped gets thrown out. */
 	for (int i = 0; i < NUMBER_OF_SPHERES; i++) 
 	{
         int valid = 0;
-        while (!valid) 
+        while (!valid) //This will check the value and run a while loop if the value is not valid.
 		{
             valid = 1;
             px[i] = (LENGTH_OF_BOX - DIAMETER) * rand() / (float)RAND_MAX - (LENGTH_OF_BOX - DIAMETER) / 2.0;
             py[i] = (LENGTH_OF_BOX - DIAMETER) * rand() / (float)RAND_MAX - (LENGTH_OF_BOX - DIAMETER) / 2.0;
             pz[i] = (LENGTH_OF_BOX - DIAMETER) * rand() / (float)RAND_MAX - (LENGTH_OF_BOX - DIAMETER) / 2.0;
 
-            // ensure no overlap
+            // This for loop ensures no overlap with the spheres if during the for loop the value is valid then the loop exits using the break 
             for (int j = 0; j < i; j++) 
 			{
                 float dx = px[i] - px[j];
@@ -97,7 +96,7 @@ void set_initail_conditions()
                 }
             }
         }
-
+//This gives each velocity vector a velocity when we open the file thats between our defined max velocity 
         vx[i] = 2.0 * MAX_VELOCITY * rand() / (float)RAND_MAX - MAX_VELOCITY;
         vy[i] = 2.0 * MAX_VELOCITY * rand() / (float)RAND_MAX - MAX_VELOCITY;
         vz[i] = 2.0 * MAX_VELOCITY * rand() / (float)RAND_MAX - MAX_VELOCITY;
@@ -143,8 +142,9 @@ void Drawwirebox()
 
 void draw_picture()
 {
-	/**/
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	/*This draws the picture and sets up the picture of our frame and spheres.*/
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
     Drawwirebox();
 
     float radius = DIAMETER / 2.0;
@@ -161,7 +161,7 @@ void draw_picture()
 
 void keep_in_box()
 {
-	/**/
+	/*This checks our spheres and if they move outside of the box they reposition to be back in teh "box" in the x, y, and z position.*/
 	float halfBox = (LENGTH_OF_BOX - DIAMETER) / 2.0;
 
     for (int i = 0; i < NUMBER_OF_SPHERES; i++) 
@@ -180,7 +180,7 @@ void keep_in_box()
 
 void get_forces()
 {
-	/**/
+	/*This runs the for loop for all of our spheres and puts the forces on each ball */
 	 for (int i = 0; i < NUMBER_OF_SPHERES; i++) 
 	{
         fx[i] = fy[i] = fz[i] = 0.0;
@@ -194,7 +194,7 @@ void get_forces()
             float dy = py[j] - py[i];
             float dz = pz[j] - pz[i];
 
-            float r2 = dx*dx + dy*dy + dz*dz + 1e-6;  // avoid div0
+            float r2 = dx*dx + dy*dy + dz*dz + 1e-6; //This checks the distance between the spheres but uses a constant small enough to avoid dividing by 0
             float r = sqrt(r2);
             float forceMag = GRAVITY * mass[i] * mass[j] / r2;
 
@@ -206,8 +206,8 @@ void get_forces()
                 float dvz = vz[j] - vz[i];
                 float inout = dx * dvx + dy * dvy + dz * dvz;
                 float push = (inout <= 0.0)
-                    ? SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER)
-                    : PUSH_BACK_REDUCTION * SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER);
+                    ? SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER)//
+                    : PUSH_BACK_REDUCTION * SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER);//
                 forceMag += push;
             }
 
@@ -330,6 +330,7 @@ int main(int argc, char** argv)
 	glutMainLoop();
 	return 0;
 }
+
 
 
 
