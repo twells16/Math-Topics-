@@ -197,8 +197,7 @@ void get_forces()
             float r2 = dx*dx + dy*dy + dz*dz + 1e-6; //This checks the distance between the spheres but uses a constant small enough to avoid dividing by 0
             float r = sqrt(r2);
             float forceMag = GRAVITY * mass[i] * mass[j] / r2;
-
-        
+		//This runs an if statement with an if else statement that checks what direction the spheres are moving and if they overlap what strength they should push apart 
         if (r < DIAMETER) 
 		{
    			 float dvx = vx[j] - vx[i];
@@ -215,37 +214,45 @@ void get_forces()
     	{
         	push = PUSH_BACK_REDUCTION * SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER);
     	}
-
-    	forceMag += push;
-}
+		//This keeps track of the force push and adds it to the total
+    	forceMag = forceMag + push;
+		}
 
 
             float fxij = forceMag * dx / r;
             float fyij = forceMag * dy / r;
             float fzij = forceMag * dz / r;
 
-            fx[i] += fxij; fy[i] += fyij; fz[i] += fzij;
-            fx[j] -= fxij; fy[j] -= fyij; fz[j] -= fzij;
+            fx[i] = fx[i] + fxij;
+			fy[i] = fy[i] + fyij;
+			fz[i] = fz[i] + fzij;
+
+			fx[j] = fx[j] - fxij;
+			fy[j] = fy[j] - fyij;
+			fz[j] = fz[j] - fzij;
+
         }
     }
 }
 
 void move_bodies(float time)
 {
-	/**/
+	/*This for loop will calculate the acceleration on the spheres from the forces and updates the velocity and position using 
+    this while also making sure the spheres stay in the box*/
 	for (int i = 0; i < NUMBER_OF_SPHERES; i++) 
 	{
         float accelX = (fx[i] - DAMP * vx[i]) / mass[i];
         float accelY = (fy[i] - DAMP * vy[i]) / mass[i];
         float accelZ = (fz[i] - DAMP * vz[i]) / mass[i];
 
-        vx[i] += DT * accelX;
-        vy[i] += DT * accelY;
-        vz[i] += DT * accelZ;
+        vx[i] = vx[i] + DT * accelX;
+		vy[i] = vy[i] + DT * accelY;
+		vz[i] = vz[i] + DT * accelZ;
 
-        px[i] += DT * vx[i];
-        py[i] += DT * vy[i];
-        pz[i] += DT * vz[i];
+		px[i] = px[i] + DT * vx[i];
+		py[i] = py[i] + DT * vy[i];
+		pz[i] = pz[i] + DT * vz[i];
+
     }
     keep_in_box();
 	
@@ -273,7 +280,7 @@ void nbody()
 			tdraw = 0;
 		}
 		
-		time += DT;
+		time = time + DT;
 	}
 	printf("\n DONE \n");
 	while(1);
@@ -339,6 +346,7 @@ int main(int argc, char** argv)
 	glutMainLoop();
 	return 0;
 }
+
 
 
 
