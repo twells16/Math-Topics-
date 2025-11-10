@@ -199,17 +199,26 @@ void get_forces()
             float forceMag = GRAVITY * mass[i] * mass[j] / r2;
 
         
-            if (r < DIAMETER) 
-			{
-                float dvx = vx[j] - vx[i];
-                float dvy = vy[j] - vy[i];
-                float dvz = vz[j] - vz[i];
-                float inout = dx * dvx + dy * dvy + dz * dvz;
-                float push = (inout <= 0.0)
-                    ? SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER)//
-                    : PUSH_BACK_REDUCTION * SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER);//
-                forceMag += push;
-            }
+        if (r < DIAMETER) 
+		{
+   			 float dvx = vx[j] - vx[i];
+   			 float dvy = vy[j] - vy[i];
+    		 float dvz = vz[j] - vz[i];
+    		 float inout = dx * dvx + dy * dvy + dz * dvz;
+    		 float push;
+
+   		if (inout <= 0.0)
+    	{
+        	push = SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER);
+    	}
+   	 	else
+    	{
+        	push = PUSH_BACK_REDUCTION * SPHERE_PUSH_BACK_STRENGTH * (r - DIAMETER);
+    	}
+
+    	forceMag += push;
+}
+
 
             float fxij = forceMag * dx / r;
             float fyij = forceMag * dy / r;
@@ -330,6 +339,7 @@ int main(int argc, char** argv)
 	glutMainLoop();
 	return 0;
 }
+
 
 
 
