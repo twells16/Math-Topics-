@@ -1,6 +1,6 @@
-// Name:
+// Name:Tanner Wells 
 // Two body problem
-// nvcc 17TwoBodyToNBodyCPU.cu -o temp -lglut -lGLU -lGL
+// nvcc R_TwoBodyToNBodyCPU.cu -o temp -lglut -lGLU -lGL
 //To stop hit "control c" in the window you launched it from.
 
 /*
@@ -38,6 +38,7 @@
 #define DRAW 100
 #define LENGTH_OF_BOX 6.0
 #define MAX_VELOCITY 5.0
+#define NUMBER_OF_SPHERES 10 //This allows us to change the problem from a two-body to an N-body
 
 // Globals
 const float XMax = (LENGTH_OF_BOX/2.0);
@@ -385,5 +386,6 @@ int main(int argc, char** argv)
 	glutMainLoop();
 	return 0;
 }
+
 
 
