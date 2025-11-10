@@ -150,7 +150,7 @@ void draw_picture()
     float radius = DIAMETER / 2.0;
     for (int i = 0; i < NUMBER_OF_SPHERES; i++) 
 	{
-        glColor3f((float)i / NUMBER_OF_SPHERES, 1.0 - (float)i / NUMBER_OF_SPHERES, 0.5);
+        glColor3f(1.0, 1.0, 1.0); //This makes my spheres white 
         glPushMatrix();
         glTranslatef(px[i], py[i], pz[i]);
         glutSolidSphere(radius, 20, 20);
@@ -330,6 +330,7 @@ int main(int argc, char** argv)
 	glutMainLoop();
 	return 0;
 }
+
 
 
 
