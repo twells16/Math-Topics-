@@ -354,6 +354,7 @@ int main(int argc, char** argv)
 	}
 	//
 	if(N <= 256 || N >= 262144 || (N & (N-1)) != 0)
+	{	
 		{
 			printf("\n N must be a power of 2 between 256 and 262,144\n");
 			exit(0);
