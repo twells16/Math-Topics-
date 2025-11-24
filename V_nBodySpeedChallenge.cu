@@ -1,6 +1,6 @@
-// Name:
+// Name:Tanner Wells
 // Optimizing nBody GPU code. 
-// nvcc nBodySpeedChallenge.cu -o temp -lglut -lm -lGLU -lGL
+// nvcc V_nBodySpeedChallenge.cu -o temp -lglut -lm -lGLU -lGL
 
 /*
  What to do:
@@ -36,7 +36,8 @@
 #include <sys/time.h>
 
 // Defines
-#define BLOCK_SIZE 1024
+//
+#define BLOCK_SIZE 256
 #define PI 3.14159265359
 #define DRAW_RATE 10
 
@@ -168,10 +169,16 @@ void setup()
 	
     	Damp = 0.5;
     	
-    	M = (float*)malloc(N*sizeof(float));
+    	/*M = (float*)malloc(N*sizeof(float));
     	P = (float3*)malloc(N*sizeof(float3));
     	V = (float3*)malloc(N*sizeof(float3));
-    	F = (float3*)malloc(N*sizeof(float3));
+    	F = (float3*)malloc(N*sizeof(float3));*/
+	//
+	// Use pinned memory for faster transfers
+    	cudaMallocHost(&P, N*sizeof(float3));
+    	cudaMallocHost(&V, N*sizeof(float3));
+    	cudaMallocHost(&F, N*sizeof(float3));
+    	cudaMallocHost(&M, N*sizeof(float));
     	
     	cudaMalloc(&MGPU,N*sizeof(float));
 	cudaErrorCheck(__FILE__, __LINE__);
@@ -259,7 +266,8 @@ __global__ void getForces(float3 *p, float3 *v, float3 *f, float *m, float g, fl
 		f[i].x = 0.0f;
 		f[i].y = 0.0f;
 		f[i].z = 0.0f;
-		
+		//
+
 		for(int j = 0; j < n; j++)
 		{
 			if(i != j)
@@ -344,7 +352,13 @@ int main(int argc, char** argv)
 		N = atoi(argv[1]);
 		DrawFlag = atoi(argv[2]);
 	}
-	
+	//
+	if(N <= 256 || N >= 262144 || (N & (N-1)) != 0)
+		{
+			printf("\n N must be a power of 2 between 256 and 262,144\n");
+			exit(0);
+		}
+	}
 	setup();
 	
 	int XWindowSize = 1000;
@@ -393,6 +407,7 @@ int main(int argc, char** argv)
 	glutMainLoop();
 	return 0;
 }
+
 
 
 
