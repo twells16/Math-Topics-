@@ -36,7 +36,7 @@
 #include <sys/time.h>
 
 // Defines
-//
+//This shortens our size of our blocks 
 #define BLOCK_SIZE 256
 #define PI 3.14159265359
 #define DRAW_RATE 10
@@ -173,14 +173,14 @@ void setup()
     	P = (float3*)malloc(N*sizeof(float3));
     	V = (float3*)malloc(N*sizeof(float3));
     	F = (float3*)malloc(N*sizeof(float3));*/
-	//
-	// Use pinned memory for faster transfers
-    	cudaMallocHost(&P, N*sizeof(float3));
-    	cudaMallocHost(&V, N*sizeof(float3));
-    	cudaMallocHost(&F, N*sizeof(float3));
-    	cudaMallocHost(&M, N*sizeof(float));
+
+	// Use pinned memory for faster transfers between the host and the GPU
+    cudaMallocHost(&P, N*sizeof(float3));
+    cudaMallocHost(&V, N*sizeof(float3));
+    cudaMallocHost(&F, N*sizeof(float3));
+    cudaMallocHost(&M, N*sizeof(float));
     	
-    	cudaMalloc(&MGPU,N*sizeof(float));
+    cudaMalloc(&MGPU,N*sizeof(float));
 	cudaErrorCheck(__FILE__, __LINE__);
 	cudaMalloc(&PGPU,N*sizeof(float3));
 	cudaErrorCheck(__FILE__, __LINE__);
